@@ -415,6 +415,36 @@ class MeadowSchemaMySQL extends libFableServiceProviderBase
 	}
 
 	/**
+	 * Programmatically drop a single index if it exists (idempotent).
+	 *
+	 * @param {string} pTableName
+	 * @param {string} pIndexName
+	 * @param {Function} fCallback - callback(pError)
+	 */
+	dropIndex(pTableName, pIndexName, fCallback)
+	{
+		if (!this._ConnectionPool)
+		{
+			this.log.error(`Meadow-MySQL DROP INDEX ${pIndexName} failed: not connected.`);
+			return fCallback(new Error('Not connected to MySQL'));
+		}
+
+		// MySQL has no DROP INDEX IF EXISTS; ER_CANT_DROP_FIELD_OR_KEY (1091)
+		// means the index was already absent — treat that as success.
+		this._ConnectionPool.query(`DROP INDEX \`${pIndexName}\` ON \`${pTableName}\``,
+			(pDropError) =>
+			{
+				if (pDropError && pDropError.errno !== 1091 && pDropError.code !== 'ER_CANT_DROP_FIELD_OR_KEY')
+				{
+					this.log.error(`Meadow-MySQL DROP INDEX ${pIndexName} on ${pTableName} failed!`, pDropError);
+					return fCallback(pDropError);
+				}
+				this.log.info(`Meadow-MySQL DROP INDEX ${pIndexName} on ${pTableName} executed.`);
+				return fCallback();
+			});
+	}
+
+	/**
 	 * Programmatically create all indices for a single table.
 	 *
 	 * @param {object} pMeadowTableSchema - Meadow table schema object
