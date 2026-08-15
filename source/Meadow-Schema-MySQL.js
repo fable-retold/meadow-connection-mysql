@@ -102,6 +102,7 @@ class MeadowSchemaMySQL extends libFableServiceProviderBase
 					tmpCreateTableStatement += `        ${tmpColumn.StorageColumn} LONGTEXT`;
 					break;
 				default:
+					this.log.error(`Meadow-MySQL ${pMeadowTableSchema.TableName}.${tmpColumn.Column} has unsupported DataType [${tmpColumn.DataType}]; no column definition was emitted and the generated DDL will be malformed.`);
 					break;
 			}
 		}
@@ -153,7 +154,7 @@ class MeadowSchemaMySQL extends libFableServiceProviderBase
 					}
 					else
 					{
-						this.log.error(`Meadow-MySQL CREATE TABLE ${pMeadowTableSchema.TableName} failed!`, pError);
+						this.log.error(`Meadow-MySQL CREATE TABLE ${pMeadowTableSchema.TableName} failed: ${pError}`, pError);
 						return fCallback(pError);
 					}
 				}
